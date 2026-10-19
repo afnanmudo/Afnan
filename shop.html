@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vanilla Thrift | เสื้อผ้ามือสองคัดพิเศษ</title>
+<meta name="description" content="ร้านเสื้อผ้ามือสองคัดเกรด สภาพดี ราคาเบา ส่งทั่วไทย">
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#707070; --line:#e1e1e1; --tile:#ebecee;
+    --accent:#c4552d; --green:#2f6b4f; --bg:#fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"Sarabun","Noto Sans Thai",system-ui,-apple-system,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;padding-bottom:64px}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;color:inherit}
+  .wrap{padding:0 clamp(16px,3vw,44px)}
+  svg{display:block}
+
+  /* promo bar */
+  .promo{background:#000;color:#fff;font-size:.9rem;display:flex;justify-content:space-between;align-items:center;padding:14px clamp(16px,3vw,44px);cursor:pointer}
+  /* header */
+  header{position:sticky;top:0;z-index:60;background:#fff}
+  .top{display:flex;align-items:center;justify-content:space-between;height:76px;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .mark{width:44px;height:44px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;letter-spacing:-1px;border-radius:4px}
+  .brand b{font-size:1.05rem;line-height:1.05;letter-spacing:1.5px}
+  .gnav{display:flex;gap:30px;flex:1;margin-left:40px}
+  .gnav button{background:none;border:none;font-size:1.05rem;color:#555;padding:6px 0;border-bottom:2px solid transparent}
+  .gnav button.on{color:var(--ink);border-color:var(--ink);font-weight:600}
+  .icons{display:flex;gap:22px;align-items:center}
+  .ib{background:none;border:none;position:relative;padding:2px}
+  .ib .dot{position:absolute;top:-6px;right:-8px;background:var(--accent);color:#fff;border-radius:999px;font-size:.68rem;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+  .searchbar{display:none;padding:0 0 12px}
+  .searchbar.open{display:block}
+  .searchbar input{width:100%;padding:12px 18px;border:1px solid var(--line);border-radius:999px;font:inherit;font-size:1rem}
+  .cats{display:flex;gap:30px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+  .cats::-webkit-scrollbar{display:none}
+  .cats button{background:none;border:none;font-size:1.05rem;padding:14px 0;white-space:nowrap;color:#555;border-bottom:2px solid transparent}
+  .cats button.on{color:var(--ink);border-color:var(--ink);font-weight:600}
+  @media(max-width:760px){.gnav{display:none}.brand b{display:none}}
+
+  /* hero */
+  .hero{position:relative;height:clamp(300px,48vw,620px);background:linear-gradient(135deg,#b9bcc2,#9ea3a0 60%,#b6b2a6);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;padding:0 20px 38px;overflow:hidden}
+  .hero .big{position:absolute;top:50%;left:50%;transform:translate(-50%,-62%) rotate(-10deg);font-size:clamp(7rem,24vw,17rem);opacity:.85;filter:drop-shadow(0 20px 30px rgba(0,0,0,.25))}
+  .hero h1{position:relative;font-size:clamp(1.8rem,5vw,3rem);font-weight:500}
+  .hero p{position:relative;margin:6px 0 16px;font-size:clamp(.9rem,2vw,1.1rem)}
+  .pillbtn{position:relative;display:inline-block;background:#fff;color:var(--ink);border:none;border-radius:999px;padding:11px 30px;font-size:1rem}
+  .gtabs{display:flex;justify-content:center;gap:clamp(30px,10vw,140px);padding:20px 0 4px}
+  .gtabs button{background:none;border:none;font-size:1.05rem;font-weight:600;color:#888;letter-spacing:1px;padding-bottom:6px;border-bottom:2px solid transparent}
+  .gtabs button.on{color:var(--ink);border-color:var(--ink)}
+
+  /* filters */
+  .filters{position:sticky;top:76px;z-index:40;background:#fff;display:flex;gap:10px;align-items:center;overflow-x:auto;padding:14px 0;border-bottom:1px solid var(--line);scrollbar-width:none}
+  .filters::-webkit-scrollbar{display:none}
+  .pill{position:relative;flex-shrink:0}
+  .pill>button{border:1px solid #cfcfcf;background:#fff;border-radius:999px;padding:9px 18px;font-size:.95rem;display:flex;align-items:center;gap:8px;white-space:nowrap}
+  .pill>button.set{border-color:var(--ink);background:var(--ink);color:#fff}
+  .pill>button svg{width:14px;height:14px}
+  .tglpill{border:1px solid #cfcfcf;background:#fff;border-radius:999px;padding:9px 18px;font-size:.95rem;white-space:nowrap;flex-shrink:0}
+  .tglpill.set{border-color:var(--ink);background:var(--ink);color:#fff}
+  .panel{position:fixed;z-index:80;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:10px;min-width:210px;max-height:60vh;overflow:auto;display:none}
+  .panel.open{display:block}
+  .panel label{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:.95rem}
+  .panel label:hover{background:#f4f4f4}
+  .panel input{accent-color:var(--ink);width:17px;height:17px}
+  .sw{width:16px;height:16px;border-radius:50%;border:1px solid #ccc;display:inline-block}
+  .clearf{margin-left:auto;background:none;border:none;text-decoration:underline;font-size:.9rem;color:var(--muted);flex-shrink:0;padding:0 6px}
+
+  .sortrow{display:flex;justify-content:flex-end;align-items:center;gap:20px;padding:22px 0 0;position:relative}
+  .sortrow .count{margin-right:auto;color:var(--muted);font-size:.95rem}
+  .sortbtn{background:none;border:none;display:flex;align-items:center;gap:8px;font-size:1.05rem}
+
+  h2.sec{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:500;margin:44px 0 22px}
+
+  /* collection tiles */
+  .tiles{display:flex;gap:18px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .tiles::-webkit-scrollbar{display:none}
+  .tile{flex:0 0 clamp(130px,17vw,235px);background:none;border:none;text-align:left}
+  .tile .im{aspect-ratio:3/4;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:clamp(3.4rem,7vw,5.5rem);border:2px solid transparent;overflow:hidden}
+  .tile .im img{width:100%;height:100%;object-fit:cover}
+  .tile.on .im{border-color:var(--ink)}
+  .tile span{display:block;margin-top:12px;font-size:.98rem}
+  .tile.on span{font-weight:700}
+
+  /* product grid */
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(150px,22vw,260px),1fr));gap:26px 18px}
+  .p{position:relative}
+  .p .im{position:relative;aspect-ratio:1/1.1;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:clamp(4rem,8vw,6.5rem);cursor:pointer;overflow:hidden}
+  .p .im img{width:100%;height:100%;object-fit:cover}
+  .p .tag{position:absolute;left:10px;top:10px;background:#fff;font-size:.74rem;padding:3px 10px;border-radius:999px}
+  .p .tag.sold{background:#444;color:#fff}
+  .p .heart{position:absolute;right:8px;top:8px;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center}
+  .p .heart.on svg{fill:var(--accent);stroke:var(--accent)}
+  .p h3{font-size:.96rem;font-weight:400;margin-top:10px;cursor:pointer}
+  .p .sub{font-size:.82rem;color:var(--muted);margin-top:2px}
+  .p .pr{font-weight:700;font-size:1.1rem;margin-top:4px}
+  .p .add{margin-top:8px;width:100%;border:1px solid var(--ink);background:#fff;border-radius:999px;padding:8px;font-size:.9rem}
+  .p .add:hover:not(:disabled){background:var(--ink);color:#fff}
+  .p .add:disabled{border-color:#ccc;color:#aaa;cursor:not-allowed}
+  .none{text-align:center;color:var(--muted);padding:70px 0;display:none}
+
+  /* info band */
+  .band{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;background:#f5f5f5;padding:34px clamp(16px,3vw,44px);margin-top:60px}
+  .band b{display:block;font-size:1.05rem;margin-bottom:4px}
+  .band span{color:var(--muted);font-size:.92rem}
+  .faq{padding:44px clamp(16px,3vw,44px) 10px;max-width:900px}
+  details{border-bottom:1px solid var(--line);padding:16px 0}
+  summary{cursor:pointer;font-weight:600}
+  details p{color:var(--muted);margin-top:8px;font-size:.95rem}
+  footer{background:#111;color:#cfcfcf;padding:36px clamp(16px,3vw,44px);display:flex;flex-wrap:wrap;gap:30px;justify-content:space-between;font-size:.92rem;margin-top:30px}
+  footer b{color:#fff}
+
+  /* bottom bar (mobile) */
+  .bbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:10px 0;z-index:55}
+  @media(min-width:900px){.bbar{display:none}body{padding-bottom:0}}
+  .bbar button{background:none;border:none;font-size:.72rem;display:flex;flex-direction:column;align-items:center;gap:2px;color:#555}
+
+  /* drawer + modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:.25s;z-index:90}
+  .overlay.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(440px,100%);background:#fff;z-index:100;transform:translateX(100%);transition:.3s;display:flex;flex-direction:column}
+  .drawer.open{transform:none}
+  .dh{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);font-size:1.1rem;font-weight:700}
+  .dh button{background:none;border:none;font-size:1.7rem;line-height:1}
+  .db{flex:1;overflow-y:auto;padding:8px 20px 24px}
+  .line{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+  .line .mi{width:60px;height:66px;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;overflow:hidden}
+  .line .mi img{width:100%;height:100%;object-fit:cover}
+  .line .t{flex:1;font-size:.92rem}.line small{color:var(--muted)}
+  .rm{background:none;border:none;color:#b33;font-size:.85rem}
+  .tot{margin:14px 0;font-size:.95rem}
+  .tot div{display:flex;justify-content:space-between;padding:3px 0}
+  .tot .g{font-size:1.15rem;font-weight:700;border-top:1px solid var(--line);margin-top:6px;padding-top:8px}
+  form label{display:block;font-size:.86rem;font-weight:600;margin:10px 0 4px}
+  form input,form textarea{width:100%;padding:11px 12px;border:1px solid #cfcfcf;border-radius:10px;font:inherit}
+  form textarea{min-height:76px;resize:vertical}
+  .pay{background:#f5f5f5;border-radius:10px;padding:12px;font-size:.85rem;margin-top:12px}
+  .submit{width:100%;margin-top:14px;padding:14px;border:none;border-radius:999px;background:var(--ink);color:#fff;font-size:1rem;font-weight:600}
+  .submit:disabled{opacity:.6}
+  .msg{margin-top:10px;font-size:.9rem;padding:10px;border-radius:8px;display:none}
+  .msg.ok{display:block;background:#e3f3e8;color:#1f5a35}.msg.err{display:block;background:#fbe4e1;color:#8a2d22}
+  .hint{text-align:center;color:var(--muted);padding:40px 0}
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:120;padding:16px}
+  .modal.open{display:flex}
+  .modal .bg{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+  .modal .box{position:relative;background:#fff;max-width:760px;width:100%;max-height:92vh;overflow:auto;display:grid;grid-template-columns:1fr 1fr}
+  @media(max-width:640px){.modal .box{grid-template-columns:1fr}}
+  .modal .bigim{background:var(--tile);min-height:280px;display:flex;align-items:center;justify-content:center;font-size:9rem}
+  .modal .bigim img{width:100%;height:100%;object-fit:cover}
+  .modal .bd{padding:24px}
+  .modal .x{position:absolute;top:10px;right:12px;background:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:1.3rem;z-index:2}
+  .modal table{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:.92rem}
+  .modal td{padding:7px 0;border-bottom:1px solid var(--line)}.modal td:first-child{color:var(--muted);width:34%}
+  .toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--ink);color:#fff;padding:10px 22px;border-radius:999px;z-index:200;transition:.3s;font-size:.92rem}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="promo" id="promo"><span>Winter Thrift Sale — เสื้อกันหนาววินเทจ ลดสูงสุด 30% ส่งฟรีเมื่อครบ ฿800</span>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M9 4l8 8-8 8"/></svg></div>
+
+<header>
+  <div class="wrap">
+    <div class="top">
+      <a class="brand" href="#" onclick="resetAll();return false"><div class="mark">VT</div><b>VANILLA<br>THRIFT</b></a>
+      <nav class="gnav" id="gnav">
+        <button data-g="หญิง">ผู้หญิง</button>
+        <button data-g="ชาย">ผู้ชาย</button>
+        <button data-g="เด็ก">เด็ก</button>
+      </nav>
+      <div class="icons">
+        <button class="ib" id="bSearch" aria-label="ค้นหา"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+        <button class="ib" id="bHeart" aria-label="รายการโปรด"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.8-8 11-8 11z"/></svg><span class="dot" id="favCount" style="display:none">0</span></button>
+        <button class="ib" id="bCart" aria-label="ตะกร้า"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h3l2.5 11h9.5l2-8H7"/><circle cx="10" cy="19.5" r="1.2"/><circle cx="17" cy="19.5" r="1.2"/></svg><span class="dot" id="cartCount" style="display:none">0</span></button>
+      </div>
+    </div>
+    <div class="searchbar" id="searchbar"><input type="search" id="q" placeholder="ค้นหา เช่น ยีนส์, เดรส, วินเทจ, Levi's"></div>
+    <div class="cats" id="cats"></div>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <div class="big">🧥</div>
+    <h1>Thrift Utility Wear</h1>
+    <p>เสื้อผ้ามือสองคัดเกรด ใส่สบาย คล่องตัวทุกวัน ชิ้นเดียวในโลก</p>
+    <button class="pillbtn" onclick="document.getElementById('filters').scrollIntoView({behavior:'smooth'})">เลือกชมสินค้า</button>
+  </section>
+  <div class="gtabs" id="gtabs">
+    <button data-g="หญิง">WOMEN</button><button data-g="ชาย">MEN</button><button data-g="เด็ก">KIDS</button>
+  </div>
+
+  <div class="wrap">
+    <div class="filters" id="filters"></div>
+    <div class="sortrow">
+      <span class="count" id="count"></span>
+      <button class="sortbtn" id="sortBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg><span id="sortLabel">เรียงตาม</span></button>
+    </div>
+
+    <h2 class="sec" id="tilesTitle">สินค้าในคอลเลคชัน</h2>
+    <div class="tiles" id="tiles"></div>
+
+    <div id="sections"></div>
+    <div class="none" id="none">ไม่พบสินค้าที่ตรงกับตัวกรอง 😢<br><button class="clearf" onclick="resetFilters()">ล้างตัวกรอง</button></div>
+  </div>
+
+  <div class="band">
+    <div><b>♻️ คัดทีละชิ้น</b><span>ตรวจตะเข็บ ซิป กระดุมทุกตัว</span></div>
+    <div><b>🧺 ซักสะอาด</b><span>ซักรีดพร้อมใส่ก่อนจัดส่ง</span></div>
+    <div><b>🔎 แจ้งตำหนิชัดเจน</b><span>ระบุเกรดและขนาดที่วัดจริง</span></div>
+    <div><b>🚚 ส่งฟรีครบ ฿800</b><span>ส่งทั่วไทย ค่าส่งปกติ ฿40</span></div>
+  </div>
+
+  <div class="faq">
+    <h2 class="sec" style="margin-top:20px">คำถามที่พบบ่อย</h2>
+    <details><summary>เกรดสภาพสินค้าแปลว่าอะไร?</summary><p>A = เหมือนใหม่ · B = สภาพดี มีร่องรอยใช้งานเล็กน้อย · C = มีตำหนิชัดเจน (แจ้งในรายละเอียด)</p></details>
+    <details><summary>สั่งซื้ออย่างไร?</summary><p>หยิบสินค้าใส่ตะกร้า กรอกชื่อ เบอร์โทร ที่อยู่ แล้วกดส่งออเดอร์ ร้านจะติดต่อกลับเพื่อแจ้งเลขบัญชีและยืนยันยอด</p></details>
+    <details><summary>เปลี่ยน/คืนสินค้าได้ไหม?</summary><p>เป็นสินค้ามือสองชิ้นเดียว ไม่รับเปลี่ยนกรณีไซซ์ไม่พอดี หากสินค้าไม่ตรงปก แจ้งภายใน 3 วันพร้อมคลิปแกะพัสดุ</p></details>
+    <details><summary>จองสินค้าไว้ได้ไหม?</summary><p>สินค้าในตะกร้าไม่ถือเป็นการจอง กรุณาส่งออเดอร์และโอนเงินภายใน 24 ชั่วโมง</p></details>
+  </div>
+</main>
+
+<footer>
+  <div><b>VANILLA THRIFT</b><br>เสื้อผ้ามือสองคัดพิเศษ<br>เปิดทุกวัน 10:00–20:00</div>
+  <div><b>ติดต่อร้าน</b><br>LINE: @vanilla.thrift<br>IG: @vanilla.thrift<br>โทร: 08x-xxx-xxxx</div>
+  <div><b>© 2026 Vanilla Thrift</b><br>ใส่แล้วดี โลกก็ดี 💚</div>
+</footer>
+
+<div class="bbar">
+  <button onclick="resetAll()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9H4z"/></svg>หน้าแรก</button>
+  <button onclick="toggleSearch()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>ค้นหา</button>
+  <button onclick="toggleFav()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.8-8 11-8 11z"/></svg>โปรด</button>
+  <button onclick="openCart()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h3l2.5 11h9.5l2-8H7"/><circle cx="10" cy="19.5" r="1.2"/><circle cx="17" cy="19.5" r="1.2"/></svg>ตะกร้า</button>
+</div>
+
+<div class="panel" id="panel"></div>
+<div class="overlay" id="overlay"></div>
+
+<aside class="drawer" id="drawer">
+  <div class="dh"><span>ตะกร้าของคุณ</span><button id="closeCart" aria-label="ปิด">×</button></div>
+  <div class="db">
+    <div id="cartLines"></div>
+    <div id="checkoutWrap" style="display:none">
+      <div class="tot">
+        <div><span>ยอดสินค้า</span><span id="tSub"></span></div>
+        <div><span>ค่าจัดส่ง</span><span id="tShip"></span></div>
+        <div class="g"><span>รวมทั้งหมด</span><span id="tTotal"></span></div>
+      </div>
+      <form id="orderForm">
+        <label for="name">ชื่อ-นามสกุล *</label><input id="name" name="name" required>
+        <label for="phone">เบอร์โทร *</label><input id="phone" name="phone" type="tel" required pattern="[0-9\-\s]{9,15}" placeholder="08x-xxx-xxxx">
+        <label for="contact">LINE / Instagram (ถ้ามี)</label><input id="contact" name="contact">
+        <label for="address">ที่อยู่จัดส่ง *</label><textarea id="address" name="address" required></textarea>
+        <label for="note">หมายเหตุ</label><input id="note" name="note">
+        <input type="hidden" name="order" id="orderField"><input type="hidden" name="total" id="totalField">
+        <div class="pay">💳 ชำระโดยโอนเงิน ร้านจะส่งเลขบัญชี/พร้อมเพย์ให้ทางข้อความหลังได้รับออเดอร์</div>
+        <button type="submit" class="submit" id="submitBtn">ส่งออเดอร์ไปที่ร้าน</button>
+        <div class="msg" id="msg"></div>
+      </form>
+    </div>
+  </div>
+</aside>
+
+<div class="modal" id="modal">
+  <div class="bg" id="modalBg"></div>
+  <div class="box">
+    <button class="x" id="modalX" aria-label="ปิด">×</button>
+    <div class="bigim" id="mBig"></div>
+    <div class="bd">
+      <h3 id="mName" style="font-size:1.3rem;font-weight:500"></h3>
+      <div id="mPrice" style="font-size:1.4rem;font-weight:700;margin-top:4px"></div>
+      <table id="mTable"></table>
+      <p id="mDesc" style="color:var(--muted);font-size:.93rem;margin-bottom:16px"></p>
+      <button class="submit" id="mAdd" style="margin-top:0">หยิบใส่ตะกร้า</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ ตั้งค่าร้าน (แก้ตรงนี้) ============ */
+const FORMSPREE_URL = "https://formspree.io/f/mrpgnvyv"; // เปลี่ยนเป็น endpoint ของคุณ
+const FREE_SHIP_OVER = 800, SHIPPING_FEE = 40;
+
+/* ============ สินค้า ============
+   img: path รูปจริง เช่น "images/jeans1.jpg" (ว่างไว้ = ใช้ emoji)
+   g: หญิง / ชาย / เด็ก / ทุกเพศ    sold:true = ขายแล้ว                  */
+const PRODUCTS = [
+  {id:1, name:"เสื้อเชิ้ตยีนส์วินเทจ", cat:"เสื้อ", g:"ทุกเพศ", size:"L", cond:"A", price:590, emoji:"👔", tone:"ฟ้า", brand:"Levi's", chest:"อก 44 นิ้ว", length:"ยาว 28 นิ้ว", desc:"ยีนส์ฟอกนุ่ม ทรงโอเวอร์ไซซ์ ใส่เป็นเชิ้ตหรือเสื้อคลุมได้"},
+  {id:2, name:"เสื้อยืดวงดนตรี 90s", cat:"เสื้อ", g:"ชาย", size:"M", cond:"B", price:390, emoji:"👕", tone:"ครีม", brand:"Vintage", chest:"อก 40 นิ้ว", length:"ยาว 27 นิ้ว", desc:"ลายสกรีนเก่าตามอายุ ผ้า cotton หนานุ่ม"},
+  {id:3, name:"เสื้อไหมพรมถักลายเกลียว", cat:"เสื้อ", g:"หญิง", size:"Free", cond:"A", price:320, emoji:"🧶", tone:"ชมพู", brand:"Uniqlo", chest:"อก 42 นิ้ว", length:"ยาว 25 นิ้ว", desc:"ไหมพรมนุ่ม ไม่คัน สีครีมอมชมพู"},
+  {id:4, name:"เสื้อฮู้ดสีเทา", cat:"เสื้อ", g:"ชาย", size:"XL", cond:"B", price:650, emoji:"🧥", tone:"เทา", brand:"Champion", chest:"อก 50 นิ้ว", length:"ยาว 29 นิ้ว", desc:"ผ้าหนา ด้านในเป็นขนแกะ ใส่อุ่นสบาย"},
+  {id:5, name:"กางเกงยีนส์ทรงกระบอก", cat:"กางเกง", g:"หญิง", size:"M", cond:"A", price:490, emoji:"👖", tone:"ฟ้า", brand:"Wrangler", chest:"เอว 30 นิ้ว", length:"ยาว 40 นิ้ว", desc:"ทรงกระบอกใหญ่ เอวสูง สียีนส์ฟอก"},
+  {id:6, name:"กางเกงคาร์โก้เขียวขี้ม้า", cat:"กางเกง", g:"ชาย", size:"L", cond:"B", price:450, emoji:"🪖", tone:"เขียว", brand:"Dickies", chest:"เอว 34 นิ้ว", length:"ยาว 41 นิ้ว", desc:"กระเป๋าข้างใหญ่ ผ้าทนทาน"},
+  {id:7, name:"กางเกงขาสั้นผ้าลินิน", cat:"กางเกง", g:"ทุกเพศ", size:"S", cond:"A", price:260, emoji:"🩳", tone:"ครีม", brand:"Muji", chest:"เอว 26 นิ้ว", length:"ยาว 17 นิ้ว", desc:"ผ้าลินินใส่เย็น เหมาะอากาศร้อน"},
+  {id:8, name:"กางเกงสแล็คเอวสูง", cat:"กางเกง", g:"หญิง", size:"M", cond:"A", price:420, emoji:"🕴️", tone:"เทา", brand:"Zara", chest:"เอว 28 นิ้ว", length:"ยาว 38 นิ้ว", desc:"ขาตรง เอวสูง ใส่ทำงานได้"},
+  {id:9, name:"เดรสลายดอกวินเทจ", cat:"เดรสและกระโปรง", g:"หญิง", size:"S", cond:"A", price:560, emoji:"👗", tone:"ชมพู", brand:"Vintage", chest:"อก 34 นิ้ว", length:"ยาว 42 นิ้ว", desc:"ลายดอกเล็กสีพาสเทล ผ้าเรยอนพลิ้ว"},
+  {id:10, name:"เดรสเชิ้ตสีขาว", cat:"เดรสและกระโปรง", g:"หญิง", size:"M", cond:"B", price:380, emoji:"🤍", tone:"ครีม", brand:"H&M", chest:"อก 38 นิ้ว", length:"ยาว 40 นิ้ว", desc:"ผ้าคอตตอน มีเข็มขัดผูกเอว"},
+  {id:11, name:"เดรสสีดำเรียบหรู", cat:"เดรสและกระโปรง", g:"หญิง", size:"L", cond:"A", price:690, emoji:"🖤", tone:"ดำ", brand:"Mango", chest:"อก 40 นิ้ว", length:"ยาว 44 นิ้ว", desc:"ผ้าหนามีน้ำหนัก ใส่ไปงานได้"},
+  {id:12, name:"แจ็คเก็ตหนังสีน้ำตาล", cat:"เสื้อตัวนอก", g:"ชาย", size:"L", cond:"B", price:1290, emoji:"🧥", tone:"น้ำตาล", brand:"Vintage", chest:"อก 46 นิ้ว", length:"ยาว 26 นิ้ว", desc:"หนังแท้เก่านุ่ม บุซับในครบ ซิปลื่น"},
+  {id:13, name:"โค้ทวูลยาวสีกรม", cat:"เสื้อตัวนอก", g:"หญิง", size:"M", cond:"A", price:1590, emoji:"🧣", tone:"กรมท่า", brand:"Burberry", chest:"อก 42 นิ้ว", length:"ยาว 40 นิ้ว", desc:"ผ้าวูลหนา เหมาะเที่ยวต่างประเทศหน้าหนาว"},
+  {id:14, name:"วินด์เบรกเกอร์พาสเทล", cat:"เสื้อตัวนอก", g:"ทุกเพศ", size:"XL", cond:"B", price:720, emoji:"🌬️", tone:"เขียว", brand:"Nike", chest:"อก 48 นิ้ว", length:"ยาว 28 นิ้ว", desc:"สไตล์ 90s กันลมกันฝนเบา ๆ"},
+  {id:15, name:"กระโปรงพลีทยาว", cat:"เดรสและกระโปรง", g:"หญิง", size:"Free", cond:"A", price:340, emoji:"💃", tone:"ครีม", brand:"Local", chest:"เอวยางยืด 26–34", length:"ยาว 32 นิ้ว", desc:"จับพลีทเรียบ ใส่คู่เสื้อยืดหรือเชิ้ต"},
+  {id:16, name:"กระโปรงยีนส์มินิ", cat:"เดรสและกระโปรง", g:"หญิง", size:"S", cond:"B", price:290, emoji:"👖", tone:"ฟ้า", brand:"Levi's", chest:"เอว 25 นิ้ว", length:"ยาว 16 นิ้ว", desc:"กระเป๋าหน้า ขอบเก่าตามวินเทจ"},
+  {id:17, name:"กระเป๋าสะพายหนังวินเทจ", cat:"เครื่องประดับ", g:"ทุกเพศ", size:"Free", cond:"A", price:450, emoji:"👜", tone:"น้ำตาล", brand:"Vintage", chest:"กว้าง 24 ซม.", length:"สูง 18 ซม.", desc:"หนังเนียน สายปรับได้ ซับในสะอาด"},
+  {id:18, name:"ผ้าพันคอผ้าไหม", cat:"เครื่องประดับ", g:"หญิง", size:"Free", cond:"A", price:220, emoji:"🧣", tone:"ชมพู", brand:"Local", chest:"90×90 ซม.", length:"-", desc:"ลายเรขาคณิตสีสด ผูกผมหรือติดกระเป๋าก็สวย"},
+  {id:19, name:"หมวกบักเก็ตวินเทจ", cat:"เครื่องประดับ", g:"ทุกเพศ", size:"Free", cond:"B", price:180, emoji:"🎩", tone:"เขียว", brand:"Vintage", chest:"รอบหัว 57 ซม.", length:"-", desc:"ผ้าคอตตอนหนา สีเขียวมะกอก"},
+  {id:20, name:"เสื้อฟลีซกันหนาว", cat:"เสื้อตัวนอก", g:"ชาย", size:"M", cond:"A", price:980, emoji:"🏔️", tone:"ฟ้า", brand:"Patagonia", chest:"อก 41 นิ้ว", length:"ยาว 26 นิ้ว", desc:"ฟลีซนุ่มอุ่นเบา พับเก็บง่าย", sold:true},
+  {id:21, name:"เสื้อยืดการ์ตูนเด็ก", cat:"เสื้อ", g:"เด็ก", size:"S", cond:"A", price:150, emoji:"🧒", tone:"ครีม", brand:"Gap Kids", chest:"อก 28 นิ้ว", length:"ยาว 18 นิ้ว", desc:"ผ้านุ่ม สกรีนลายสดใส สำหรับอายุ 6–8 ปี"},
+  {id:22, name:"แจ็คเก็ตยีนส์เด็ก", cat:"เสื้อตัวนอก", g:"เด็ก", size:"S", cond:"B", price:290, emoji:"🧥", tone:"ฟ้า", brand:"OshKosh", chest:"อก 29 นิ้ว", length:"ยาว 19 นิ้ว", desc:"ยีนส์นุ่ม ซับในผ้าฝ้าย สำหรับอายุ 6–8 ปี"},
+  {id:23, name:"กางเกงขายาวเด็ก", cat:"กางเกง", g:"เด็ก", size:"S", cond:"A", price:190, emoji:"👖", tone:"เทา", brand:"Uniqlo", chest:"เอวยางยืด 22–26", length:"ยาว 26 นิ้ว", desc:"เอวยางยืดสบาย ผ้าหนาปานกลาง"}
+];
+
+const CAT_ORDER = ["เสื้อตัวนอก","เสื้อ","กางเกง","เดรสและกระโปรง","เครื่องประดับ"];
+const CAT_ICON = {"เสื้อตัวนอก":"🧥","เสื้อ":"👕","กางเกง":"👖","เดรสและกระโปรง":"👗","เครื่องประดับ":"👜"};
+const GRADE = {A:"เกรด A · เหมือนใหม่", B:"เกรด B · สภาพดี", C:"เกรด C · มีตำหนิ"};
+const TONES = {"ดำ":"#222","เทา":"#9a9a9a","ครีม":"#efe5d0","น้ำตาล":"#8a5a3b","ชมพู":"#f0bcc9","ฟ้า":"#9bbbe0","กรมท่า":"#243a66","เขียว":"#6a9a74"};
+const PRICES = [["ต่ำกว่า ฿300",0,299],["฿300 – ฿599",300,599],["฿600 – ฿999",600,999],["฿1,000 ขึ้นไป",1000,1e9]];
+const SORTS = {new:"ใหม่ล่าสุด", low:"ราคาต่ำ → สูง", high:"ราคาสูง → ต่ำ"};
+
+const $ = s => document.querySelector(s);
+const baht = n => "฿" + n.toLocaleString("th-TH");
+const load = (k,d) => { try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch(e){ return d; } };
+const store = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+const vis = p => p.img ? `<img src="${p.img}" alt="${p.name}">` : p.emoji;
+const toast = t => { const el=$("#toast"); el.textContent=t; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),1800); };
+
+let cart = load("vt_cart",[]).filter(id => PRODUCTS.some(p=>p.id===id && !p.sold));
+let favs = load("vt_favs",[]);
+const F = {gender:"", cat:"", sizes:[], grades:[], tones:[], prices:[], inStock:false, favOnly:false, q:"", sort:"new"};
+
+/* ============ เมนูบน ============ */
+const catNames = ["ทั้งหมด", ...CAT_ORDER];
+$("#cats").innerHTML = catNames.map(c=>`<button data-c="${c==="ทั้งหมด"?"":c}">${c==="ทั้งหมด"?"สินค้าทั้งหมด":c}</button>`).join("");
+$("#cats").onclick = e => { const b=e.target.closest("button"); if(!b) return; F.cat=b.dataset.c; render(); };
+function setGender(g){ F.gender = F.gender===g ? "" : g; render(); }
+$("#gnav").onclick = e => { const b=e.target.closest("button"); if(b) setGender(b.dataset.g); };
+$("#gtabs").onclick = e => { const b=e.target.closest("button"); if(b) setGender(b.dataset.g); };
+
+function toggleSearch(){ $("#searchbar").classList.toggle("open"); if($("#searchbar").classList.contains("open")) $("#q").focus(); }
+$("#bSearch").onclick = toggleSearch;
+$("#q").oninput = e => { F.q = e.target.value.trim().toLowerCase(); render(); };
+function toggleFav(){ F.favOnly = !F.favOnly; render(); if(F.favOnly) document.getElementById("filters").scrollIntoView({behavior:"smooth"}); }
+$("#bHeart").onclick = toggleFav;
+$("#promo").onclick = () => { F.cat="เสื้อตัวนอก"; render(); document.getElementById("filters").scrollIntoView({behavior:"smooth"}); };
+function resetFilters(){ Object.assign(F,{gender:"",cat:"",sizes:[],grades:[],tones:[],prices:[],inStock:false,favOnly:false,q:""}); $("#q").value=""; render(); }
+function resetAll(){ resetFilters(); window.scrollTo({top:0,behavior:"smooth"}); }
+
+/* ============ ตัวกรองแบบ pill ============ */
+const FDEF = [
+  {key:"gender", label:"ประเภท", type:"single", opts:()=>["หญิง","ชาย","เด็ก"].map(v=>({v,t:{หญิง:"ผู้หญิง",ชาย:"ผู้ชาย",เด็ก:"เด็ก"}[v]}))},
+  {key:"sizes",  label:"ขนาด",   type:"multi",  opts:()=>["S","M","L","XL","Free"].map(v=>({v,t:v}))},
+  {key:"grades", label:"เกรดสภาพ", type:"multi", opts:()=>["A","B","C"].map(v=>({v,t:GRADE[v]}))},
+  {key:"tones",  label:"สี",     type:"multi",  opts:()=>Object.keys(TONES).map(v=>({v,t:v,sw:TONES[v]}))},
+  {key:"prices", label:"ราคา",   type:"multi",  opts:()=>PRICES.map((r,i)=>({v:i,t:r[0]}))}
+];
+function renderFilters(){
+  const html = FDEF.map(f=>{
+    const cur = f.type==="single" ? (F[f.key]?[F[f.key]]:[]) : F[f.key];
+    const set = cur.length>0;
+    const lab = set ? `${f.label} (${cur.length})` : f.label;
+    return `<div class="pill"><button class="${set?"set":""}" data-f="${f.key}">${lab}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button></div>`;
+  }).join("") +
+  `<button class="tglpill ${F.inStock?"set":""}" id="stockBtn">มีสินค้าพร้อมขาย</button>` +
+  `<button class="tglpill ${F.favOnly?"set":""}" id="favBtn">♡ รายการโปรด</button>` +
+  (anyFilter() ? `<button class="clearf" onclick="resetFilters()">ล้างทั้งหมด</button>` : "");
+  $("#filters").innerHTML = html;
+  $("#stockBtn").onclick = () => { F.inStock=!F.inStock; render(); };
+  $("#favBtn").onclick = toggleFav;
+}
+function anyFilter(){ return F.gender||F.cat||F.sizes.length||F.grades.length||F.tones.length||F.prices.length||F.inStock||F.favOnly||F.q; }
+
+const panel = $("#panel"); let panelKey = null;
+function closePanel(){ panel.classList.remove("open"); panelKey=null; }
+function openPanel(btn, html, key){
+  if(panelKey===key){ closePanel(); return; }
+  panelKey = key; panel.innerHTML = html;
+  const r = btn.getBoundingClientRect();
+  panel.style.top = (r.bottom+8)+"px";
+  panel.style.left = Math.min(r.left, innerWidth-240)+"px";
+  panel.style.right = "auto";
+  panel.classList.add("open");
+}
+$("#filters").addEventListener("click", e => {
+  const b = e.target.closest("[data-f]"); if(!b) return;
+  const f = FDEF.find(x=>x.key===b.dataset.f);
+  const cur = f.type==="single" ? [F[f.key]] : F[f.key];
+  const html = f.opts().map(o=>`<label><input type="${f.type==="single"?"radio":"checkbox"}" name="${f.key}" data-k="${f.key}" data-v="${o.v}" ${cur.map(String).includes(String(o.v))?"checked":""}>${o.sw?`<span class="sw" style="background:${o.sw}"></span>`:""}${o.t}</label>`).join("");
+  openPanel(b, html, f.key);
+});
+panel.addEventListener("change", e => {
+  const i = e.target; const k = i.dataset.k; if(!k) return;
+  const f = FDEF.find(x=>x.key===k);
+  if(f.type==="single"){ F[k] = i.checked ? i.dataset.v : ""; }
+  else{
+    const v = k==="prices" ? +i.dataset.v : i.dataset.v;
+    F[k] = i.checked ? [...F[k], v] : F[k].filter(x=>x!==v);
+  }
+  const keep = panelKey; render(); panelKey = keep; /* panel stays open */
+});
+document.addEventListener("click", e => { if(!e.target.closest(".panel") && !e.target.closest("[data-f]") && !e.target.closest("#sortBtn")) closePanel(); });
+addEventListener("scroll", closePanel, {passive:true});
+
+$("#sortBtn").onclick = e => {
+  const html = Object.entries(SORTS).map(([k,t])=>`<label><input type="radio" name="sort" data-sort="${k}" ${F.sort===k?"checked":""}>${t}</label>`).join("");
+  openPanel($("#sortBtn"), html, "sort");
+  panel.style.left="auto"; panel.style.right="16px";
+};
+panel.addEventListener("change", e => { if(e.target.dataset.sort){ F.sort=e.target.dataset.sort; closePanel(); render(); } });
+
+/* ============ แสดงผล ============ */
+function filtered(){
+  let l = PRODUCTS.filter(p=>{
+    if(F.gender && p.g!==F.gender && p.g!=="ทุกเพศ") return false;
+    if(F.cat && p.cat!==F.cat) return false;
+    if(F.sizes.length && !F.sizes.includes(p.size)) return false;
+    if(F.grades.length && !F.grades.includes(p.cond)) return false;
+    if(F.tones.length && !F.tones.includes(p.tone)) return false;
+    if(F.prices.length && !F.prices.some(i=>p.price>=PRICES[i][1] && p.price<=PRICES[i][2])) return false;
+    if(F.inStock && p.sold) return false;
+    if(F.favOnly && !favs.includes(p.id)) return false;
+    if(F.q && !(p.name+p.brand+p.cat+p.desc+p.tone).toLowerCase().includes(F.q)) return false;
+    return true;
+  });
+  if(F.sort==="low") l.sort((a,b)=>a.price-b.price);
+  else if(F.sort==="high") l.sort((a,b)=>b.price-a.price);
+  else l.sort((a,b)=>b.id-a.id);
+  return l;
+}
+function card(p){
+  const inCart = cart.includes(p.id), fav = favs.includes(p.id);
+  return `<article class="p">
+    <div class="im" data-view="${p.id}">${vis(p)}
+      <span class="tag ${p.sold?"sold":""}">${p.sold?"ขายแล้ว":"เกรด "+p.cond}</span>
+      <button class="heart ${fav?"on":""}" data-fav="${p.id}" aria-label="โปรด"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.8-8 11-8 11z"/></svg></button>
+    </div>
+    <h3 data-view="${p.id}">${p.name}</h3>
+    <div class="sub">ไซซ์ ${p.size} · ${p.brand}</div>
+    <div class="pr">${baht(p.price)}</div>
+    <button class="add" data-add="${p.id}" ${p.sold||inCart?"disabled":""}>${p.sold?"ขายแล้ว":inCart?"อยู่ในตะกร้า":"หยิบใส่ตะกร้า"}</button>
+  </article>`;
+}
+function render(){
+  document.querySelectorAll("#gnav button, #gtabs button").forEach(b=>b.classList.toggle("on", b.dataset.g===F.gender));
+  document.querySelectorAll("#cats button").forEach(b=>b.classList.toggle("on", b.dataset.c===F.cat));
+  renderFilters();
+  $("#sortLabel").textContent = "เรียงตาม: " + SORTS[F.sort];
+
+  const list = filtered();
+  $("#count").textContent = list.length + " รายการ";
+  $("#none").style.display = list.length ? "none" : "block";
+
+  /* tiles = หมวดสินค้า (ตามตัวกรองอื่น ๆ) */
+  const base = PRODUCTS.filter(p => !F.gender || p.g===F.gender || p.g==="ทุกเพศ");
+  const tiles = [`<button class="tile ${F.cat===""?"on":""}" data-tile=""><div class="im" style="font-size:1.4rem;color:#3a63b5;font-style:italic;line-height:1.1;text-align:center;font-weight:300">THRIFT<br>UTILITY<br>WEAR</div><span>${F.cat===""?"<b>สินค้าทั้งหมด</b>":"สินค้าทั้งหมด"}</span></button>`];
+  CAT_ORDER.forEach(c=>{
+    const ex = base.find(p=>p.cat===c); if(!ex) return;
+    tiles.push(`<button class="tile ${F.cat===c?"on":""}" data-tile="${c}"><div class="im">${ex.img?`<img src="${ex.img}" alt="">`:CAT_ICON[c]}</div><span>${c}</span></button>`);
+  });
+  $("#tiles").innerHTML = tiles.join("");
+
+  /* sections */
+  const sec = [];
+  if(F.cat || anyFilter() && F.cat==="" && (F.q||F.favOnly)){
+    sec.push(`<h2 class="sec">${F.favOnly?"รายการโปรดของคุณ":F.q?"ผลการค้นหา":F.cat}</h2><div class="pgrid">${list.map(card).join("")}</div>`);
+  }else{
+    CAT_ORDER.forEach(c=>{
+      const items = list.filter(p=>p.cat===c); if(!items.length) return;
+      sec.push(`<h2 class="sec">${c}</h2><div class="pgrid">${items.map(card).join("")}</div>`);
+    });
+  }
+  $("#sections").innerHTML = sec.join("");
+  $("#favCount").style.display = favs.length ? "flex":"none"; $("#favCount").textContent = favs.length;
+}
+$("#tiles").onclick = e => { const t=e.target.closest("[data-tile]"); if(t){ F.cat=t.dataset.tile; render(); } };
+$("#sections").onclick = e => {
+  const a=e.target.closest("[data-add]"); if(a){ addToCart(+a.dataset.add); return; }
+  const h=e.target.closest("[data-fav]"); if(h){ toggleFavItem(+h.dataset.fav); return; }
+  const v=e.target.closest("[data-view]"); if(v) openModal(+v.dataset.view);
+};
+function toggleFavItem(id){
+  favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs,id]; store("vt_favs",favs);
+  if(F.favOnly && !favs.length) F.favOnly=false;
+  render();
+}
+
+/* ============ รายละเอียดสินค้า ============ */
+let modalId=null;
+function openModal(id){
+  const p = PRODUCTS.find(x=>x.id===id); modalId=id;
+  $("#mBig").innerHTML = vis(p);
+  $("#mName").textContent = p.name; $("#mPrice").textContent = baht(p.price);
+  $("#mTable").innerHTML = `<tr><td>แบรนด์</td><td>${p.brand}</td></tr><tr><td>ไซซ์</td><td>${p.size}</td></tr><tr><td>สี</td><td>${p.tone}</td></tr><tr><td>สภาพ</td><td>${GRADE[p.cond]}</td></tr><tr><td>วัดได้</td><td>${p.chest} · ${p.length}</td></tr>`;
+  $("#mDesc").textContent = p.desc;
+  const b=$("#mAdd"), inCart=cart.includes(id);
+  b.disabled = p.sold||inCart; b.style.opacity = b.disabled?.5:1;
+  b.textContent = p.sold?"ขายแล้ว":inCart?"อยู่ในตะกร้าแล้ว":"หยิบใส่ตะกร้า";
+  $("#modal").classList.add("open");
+}
+const closeModal = () => $("#modal").classList.remove("open");
+$("#modalX").onclick = closeModal; $("#modalBg").onclick = closeModal;
+$("#mAdd").onclick = () => { addToCart(modalId); closeModal(); };
+
+/* ============ ตะกร้า ============ */
+function addToCart(id){
+  const p=PRODUCTS.find(x=>x.id===id); if(!p||p.sold||cart.includes(id)) return;
+  cart.push(id); store("vt_cart",cart); updateCart(); render(); toast("เพิ่มลงตะกร้าแล้ว ✓");
+}
+function totals(){
+  const sub = cart.reduce((s,id)=>s+PRODUCTS.find(p=>p.id===id).price,0);
+  const ship = !cart.length?0 : sub>=FREE_SHIP_OVER?0:SHIPPING_FEE;
+  return {sub,ship,total:sub+ship};
+}
+function updateCart(){
+  $("#cartCount").style.display = cart.length?"flex":"none"; $("#cartCount").textContent = cart.length;
+  if(!cart.length){ $("#cartLines").innerHTML='<div class="hint">ตะกร้ายังว่างอยู่ 🛍<br>เลือกชมสินค้าได้เลย</div>'; $("#checkoutWrap").style.display="none"; return; }
+  $("#cartLines").innerHTML = cart.map(id=>{
+    const p=PRODUCTS.find(x=>x.id===id);
+    return `<div class="line"><div class="mi">${vis(p)}</div><div class="t">${p.name}<br><small>ไซซ์ ${p.size} · ${baht(p.price)}</small></div><button class="rm" data-rm="${id}">ลบ</button></div>`;
+  }).join("");
+  const t=totals();
+  $("#tSub").textContent=baht(t.sub); $("#tShip").textContent=t.ship?baht(t.ship):"ฟรี"; $("#tTotal").textContent=baht(t.total);
+  $("#checkoutWrap").style.display="block";
+}
+$("#cartLines").onclick = e => { const b=e.target.closest("[data-rm]"); if(b){ cart=cart.filter(x=>x!==+b.dataset.rm); store("vt_cart",cart); updateCart(); render(); } };
+function openCart(){ $("#drawer").classList.add("open"); $("#overlay").classList.add("open"); }
+function closeCart(){ $("#drawer").classList.remove("open"); $("#overlay").classList.remove("open"); }
+$("#bCart").onclick=openCart; $("#closeCart").onclick=closeCart; $("#overlay").onclick=closeCart;
+
+/* ============ ส่งออเดอร์เข้าอีเมล ============ */
+$("#orderForm").addEventListener("submit", async e => {
+  e.preventDefault(); if(!cart.length) return;
+  const t=totals();
+  const lines = cart.map((id,i)=>{ const p=PRODUCTS.find(x=>x.id===id); return `${i+1}. ${p.name} (ไซซ์ ${p.size}) - ${baht(p.price)}`; });
+  $("#orderField").value = lines.join("\n")+`\n\nยอดสินค้า: ${baht(t.sub)}\nค่าส่ง: ${t.ship?baht(t.ship):"ฟรี"}\nรวมทั้งหมด: ${baht(t.total)}`;
+  $("#totalField").value = baht(t.total);
+  const btn=$("#submitBtn"), msg=$("#msg");
+  btn.disabled=true; btn.textContent="กำลังส่ง..."; msg.className="msg";
+  try{
+    const res = await fetch(FORMSPREE_URL,{method:"POST",body:new FormData(e.target),headers:{Accept:"application/json"}});
+    if(!res.ok) throw 0;
+    msg.className="msg ok"; msg.textContent="ส่งออเดอร์เรียบร้อย ✓ ร้านจะติดต่อกลับเพื่อแจ้งเลขบัญชีและยืนยันยอด";
+    cart=[]; store("vt_cart",cart); e.target.reset(); updateCart(); render();
+    $("#cartLines").innerHTML='<div class="hint">ขอบคุณที่อุดหนุนค่ะ 💚</div>'; $("#checkoutWrap").style.display="block";
+  }catch(err){
+    msg.className="msg err"; msg.textContent="ส่งไม่สำเร็จ กรุณาลองใหม่ หรือทักร้านทาง LINE";
+  }finally{ btn.disabled=false; btn.textContent="ส่งออเดอร์ไปที่ร้าน"; }
+});
+
+document.addEventListener("keydown", e => { if(e.key==="Escape"){ closeModal(); closeCart(); closePanel(); } });
+render(); updateCart();
+</script>
+</body>
+</html>
